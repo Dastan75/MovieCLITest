@@ -6,25 +6,37 @@ const APIKEY      = "9addd40314c1597e7c96b75a6d88d8bb";
 
 var questions = [
   {
-    type: 'input',
+    type: 'list',
     name: 'language',
-    message: "Choose a language (en or fr)",
-    default: function() {
-      return 'en';
-    }
+    message: "Choose a language",
+    choices: [
+      'fr',
+      'en'
+    ]
   },
   {
-    type: 'input',
+    type: 'list',
     name: 'animation',
-    message: "Animation movies ? (yes/no)",
-    default: function() {
-      return 'no';
-    }
+    message: "Animation movies ?",
+    choices: [
+      'yes',
+      'no'
+    ]
   },
   {
     type: 'input',
     name: 'page',
-    message: "Which page ?",
+    message: "Which page ? (Minimum 1)",
+    validate: function(value) {
+      var pass = value.match(
+        /^[0-9]*$/
+      );
+      if (pass) {
+        return true;
+      }
+
+      return 'Please enter a valid number';
+    },
     default: function() {
       return '1';
     }
@@ -33,23 +45,37 @@ var questions = [
     type: 'input',
     name: 'star',
     message: "Minimum star (0 to 10)",
+    validate: function(value) {
+      var pass = value.match(
+        /\b[0-9]\b/
+      );
+      if (pass) {
+        return true;
+      }
+
+      return 'Please enter a valid number';
+    },
     default: function() {
       return '0';
     }
   },
   {
-    type: 'input',
+    type: 'list',
     name: 'sort',
-    message: "Sort by ? (vote or release)",
-    default: function() {
-      return 'vote';
-    }
+    message: "Sort by ?",
+    choices: [
+      'vote',
+      'release'
+    ]
   }
 ];
 
 inquirer.prompt(questions).then(answers => {
   //console.log(JSON.stringify(answers, null, '  '));
-  //
+  if (answers.page == 0) {
+    answers.page = 1;
+  }
+
   var URL = "https://api.themoviedb.org/3/discover/movie?api_key=" + APIKEY +
   "&language=" + answers.language +
   "&include_adult=false&include_video=false" +
@@ -62,7 +88,8 @@ inquirer.prompt(questions).then(answers => {
     URL += "&sort_by=vote_average.desc"
   if (answers.sort == "release")
     URL += "&sort_by=release_date.desc"
-  console.log(URL);
+  // console.log(URL);
+
   request.get(URL, function (error, response, body) {
     if (error)
       console.log('error:', error); // Print the error if one occurred
@@ -74,7 +101,7 @@ inquirer.prompt(questions).then(answers => {
     console.log("Total pages : ", obj.total_pages);
     listMovies = obj.results;
       async.each(listMovies, function(movie, callback) {
-        console.log("Title : ", movie.title, ",Release date : ", movie.release_date, ",Vote average : " , movie.vote_average);
+        console.log("Title : ", movie.title, ",Release date : ", movie.release_date, ",Vote average : " , movie.vote_average + "/10");
         console.log("-------------");
         callback();
       }, function(err) {
